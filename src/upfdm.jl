@@ -1,45 +1,58 @@
 # 1D linear
-function upfdm_1d_linear(c0::Vector{Float64}, D::Float64, dx::Float64, dt::Float64,
-                     tspan, k_func::Function)
+function upfdm_1d_linear(Ua, D, f, x, t, u0, ua, ub)
+    Nx = length(x)
+    Nt = length(t)
+    dx = x[2] - x[1]
+    dt = t[2] - t[1]
 
-    tvec = collect(tspan)
-    n = length(c0)
-    c = copy(c0)
-    results = zeros(n, length(tvec))
+    λ = dt/dx
+    β = dt/dx^2
 
-    α = D * dt / dx^2  # diffusion number
+    u = zeros(Float64, Nt, Nx)
+    u[1,:] = u0
 
-    for (j, t) in enumerate(tvec)
-        results[:, j] .= c
-        k = k_func(t)
+    for n in 1:Nt-1
+        # boundary conditions
+        u[n,1]   = ua(t[n])
+        u[n,end] = ub(t[n])
 
-        new_c = similar(c)
-
-        for i in 2:n-1
-            num = c[i] + α * (c[i+1] - 2c[i] + c[i-1])
-            denom = 1 + dt * k
-            new_c[i] = num / denom
+        for i in 2:Nx-1
+            u[n+1,i] = (u[n,i] + (λ+β)*u[n,i-1] + β*u[n,i+1]) /
+                        (1 + dt + λ + 2β)
         end
 
-        # Boundary conditions (Dirichlet)
-        new_c[1] = c[1]
-        new_c[end] = c[end]
-
-        # Enforce positivity
-        @inbounds for i in 1:n
-            new_c[i] = max(new_c[i], 0.0)
-        end
-
-        c .= new_c
+        # right boundary: Neumann ux(b,t) = -u(b,t)
+        u[n+1,end] = u[n+1,end-1] - dx*u[n+1,end]
     end
 
-    return results
+    return u
 end
 
+
 # 1D non-linear
-function upfdm_1d_nonlinear(c0:: Vector{Float64})
-    # Placeholder for 1D non-linear FDM implementation
-    return nothing
+function upfdm_1d_nonlinear(D, r, x, t, u0)
+    Nx = length(x)
+    Nt = length(t)
+    dx = x[2] - x[1]
+    dt = t[2] - t[1]
+
+    λ = D*dt/dx^2
+
+    u = zeros(Float64, Nt, Nx)
+    u[1,:] = u0
+
+    for n in 1:Nt-1
+        u[n,1] = 0
+        u[n,end] = 0
+
+        for i in 2:Nx-1
+            num = (1 + r*dt)*u[n,i] + λ*(u[n,i+1] - u[n,i])
+            den = 1 + 2λ + r*dt*u[n,i]
+            u[n+1,i] = num/den
+        end
+    end
+
+    return u
 end
 
 # 2D linear
