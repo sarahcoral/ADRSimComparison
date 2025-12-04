@@ -1,13 +1,25 @@
 module MicroplasticsDegradation
 
-using DifferentialEquations, LinearAlgebra, Plots
-
-include("models.jl")
-include("fdm.jl")
-include("fem.jl")
-include("particle.jl")
+include("cn.jl")
+include("upfdm.jl")
+include("eupfdm.jl")
 include("utils.jl")
+include("models.jl")
 
-export Particle, degradation_rate, solve_fdm, solve_fem, evolve_particles!, compute_mass, compute_half_life
+export degradation_rate,
+       fdm_1d_linear,
+       fdm_1d_nonlinear,
+       fdm_2d_linear,
+       fdm_2d_nonlinear,
+       upfdm_1d_linear,
+       upfdm_1d_nonlinear,
+       upfdm_2d_linear,
+       upfdm_2d_nonlinear,
+       eupfdm_1d_linear,
+       eupfdm_1d_nonlinear,
+       eupfdm_2d_linear,
+       eupfdm_2d_nonlinear,
+       compute_mass,
+       compute_half_life
 
-end
+end # module
